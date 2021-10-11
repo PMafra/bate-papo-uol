@@ -78,23 +78,23 @@ app.post('/status', (req, res) => {
     res.sendStatus(200);
 });
 
-// const isUserInactive = () => {
-//     const secondsNow = Date.now();
-//     for(let i = 0; i < participants.length; i++) {
-//         if (participants.length !== 0) {
-//             if ((secondsNow - participants[i].lastStatus)/1000 > 10) { 
-//                 participants.splice(i, 1);
-//                 messages.push({
-//                     from: participants[i].name,
-//                     to: "Todos",
-//                     text: "sai da sala...",
-//                     type: 'status', 
-//                     time: 'HH:MM:SS'
-//                 });
-//             }
-//         }
-//     }
-// }
-// setInterval(isUserInactive, 15000);
+const isUserInactive = () => {
+    const secondsNow = Date.now();
+    if (participants.length !== 0) {
+        for(let i = 0; i < participants.length; i++) {
+            if ((secondsNow - participants[i].lastStatus)/1000 > 10) {
+                let removedUser = participants.splice(i, 1);
+                messages.push({
+                    from: removedUser[0].name,
+                    to: "Todos",
+                    text: "sai da sala...",
+                    type: 'status', 
+                    time: dayjs().format("HH:mm:ss")
+                });
+            }
+        }
+    }
+}
+setInterval(isUserInactive, 15000);
 
 app.listen(4000);
