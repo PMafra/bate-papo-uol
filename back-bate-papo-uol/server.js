@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dayjs from "dayjs";
 import fs from "fs";
+import Joi from "joi";
 
 const app = express();
 app.use(cors());
@@ -10,6 +11,16 @@ app.use(express.json());
 const database = fs.readFileSync("./database.json");
 const participants = JSON.parse(database.toString()).participants;
 const messages = JSON.parse(database.toString()).messages;
+
+const userNameSchema = Joi.object().keys({
+    name: Joi.string().alphanum().min(3).max(30).required()
+});
+
+const messageSchema = Joi.object().keys({
+    to: Joi.string().alphanum().required(),
+    text: Joi.string().required(),
+    type: Joi.valid("message").valid("private_message")
+});
 
 const saveData = () => {
     const dataBaseContent = {
@@ -21,12 +32,13 @@ const saveData = () => {
 
 app.post('/participants', (req, res) => {
     const name = req.body.name;
-    if (!name) {
-        res.status(400).send("Bad Request: O nome não pode ser uma string vazia");
+    const result = userNameSchema.validate(req.body);
+    if (result.error) {
+        res.status(400).send(`Bad Request: ${result.error.details[0].message}`);
         return;
     }
     if (participants.find(participant => participant.name === name)) {
-        res.status(400).send("Bad Request: Nome já existente");
+        res.status(400).send("Bad Request: Name already exists");
         return;
     }
     participants.push({
@@ -51,16 +63,13 @@ app.get('/participants', (req, res) => {
 app.post('/messages', (req, res) => {
     const message = req.body;
     const user = req.header("User");
+    const result = messageSchema.validate(message);
+    if (result.error) {
+        res.status(400).send(`Bad Request: ${result.error.details[0].message}`);
+        return;
+    }
     if (!participants.find(participant => participant.name === user)) {
-        res.status(400).send("Bad Request: Remetente não existente na lista de participantes");
-        return;
-    }
-    if (!message.to || !message.text) {
-        res.status(400).send("Bad Request: String vazia encontrada");
-        return;
-    }
-    if (message.type !== "message" && message.type !== "private_message") {
-        res.status(400).send("Bad Request: Tipo de mensagem errada");
+        res.status(400).send("Bad Request: Your username was not found in participants list");
         return;
     }
     messages.push({
@@ -89,7 +98,7 @@ app.post('/status', (req, res) => {
     const user = req.header("User");
     const isUserOn = participants.find(participant => participant.name === user);
     if (!isUserOn) {
-        res.status(400).send("Bad Request: Usuário não existente na lista de participantes");
+        res.status(400).send("Bad Request: User not found in participants list");
         return;
     }
     isUserOn.lastStatus = Date.now();
