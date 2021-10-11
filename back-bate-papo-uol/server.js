@@ -1,21 +1,33 @@
 import express from "express";
 import cors from "cors";
 import dayjs from "dayjs";
+import fs from "fs";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const participants = [];
-const messages = [];
+const database = fs.readFileSync("./database.json");
+const participants = JSON.parse(database.toString()).participants;
+const messages = JSON.parse(database.toString()).messages;
+
+const saveData = () => {
+    const dataBaseContent = {
+        participants,
+        messages
+    }
+    fs.writeFileSync("./database.json", JSON.stringify(dataBaseContent));
+}
 
 app.post('/participants', (req, res) => {
     const name = req.body.name;
     if (!name) {
         res.status(400).send("Bad Request: O nome não pode ser uma string vazia");
+        return;
     }
     if (participants.find(participant => participant.name === name)) {
         res.status(400).send("Bad Request: Nome já existente");
+        return;
     }
     participants.push({
         name,
@@ -28,6 +40,7 @@ app.post('/participants', (req, res) => {
         type: "status",
         time: dayjs().format("HH:mm:ss")
     });
+    saveData();
     res.sendStatus(200);
 });
 
@@ -38,20 +51,24 @@ app.get('/participants', (req, res) => {
 app.post('/messages', (req, res) => {
     const message = req.body;
     const user = req.header("User");
+    if (!participants.find(participant => participant.name === user)) {
+        res.status(400).send("Bad Request: Remetente não existente na lista de participantes");
+        return;
+    }
     if (!message.to || !message.text) {
         res.status(400).send("Bad Request: String vazia encontrada");
+        return;
     }
     if (message.type !== "message" && message.type !== "private_message") {
         res.status(400).send("Bad Request: Tipo de mensagem errada");
-    }
-    if (!participants.find(participant => participant.name === user)) {
-        res.status(400).send("Bad Request: Remetente não existente na lista de participantes")
+        return;
     }
     messages.push({
         from: user,
         ...message,
         time: dayjs().format("HH:mm:ss")
     })
+    saveData();
     res.sendStatus(200);
 });
 
@@ -63,6 +80,7 @@ app.get('/messages', (req, res) => {
     if (req.query.limit) {
         const messagesQty = req.query.limit;
         res.send(messagesToSend.slice(-messagesQty));
+        return;
     }
     res.send(messagesToSend);
 });
@@ -70,17 +88,18 @@ app.get('/messages', (req, res) => {
 app.post('/status', (req, res) => {
     const user = req.header("User");
     const isUserOn = participants.find(participant => participant.name === user);
-    console.log(isUserOn);
     if (!isUserOn) {
-        res.status(400).send("Bad Request: Usuário não existente na lista de participantes")
+        res.status(400).send("Bad Request: Usuário não existente na lista de participantes");
+        return;
     }
     isUserOn.lastStatus = Date.now();
+    saveData();
     res.sendStatus(200);
 });
 
 const isUserInactive = () => {
-    const secondsNow = Date.now();
     if (participants.length !== 0) {
+        const secondsNow = Date.now();
         for(let i = 0; i < participants.length; i++) {
             if ((secondsNow - participants[i].lastStatus)/1000 > 10) {
                 let removedUser = participants.splice(i, 1);
@@ -93,6 +112,7 @@ const isUserInactive = () => {
                 });
             }
         }
+        saveData();
     }
 }
 setInterval(isUserInactive, 15000);
