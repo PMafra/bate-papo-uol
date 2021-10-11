@@ -70,13 +70,12 @@ app.get('/messages', (req, res) => {
 app.post('/status', (req, res) => {
     const user = req.header("User");
     const isUserOn = participants.find(participant => participant.name === user);
-    if (isUserOn) {
-        isUserOn.lastStatus = Date.now();
-    } else {
-
+    console.log(isUserOn);
+    if (!isUserOn) {
+        res.status(400).send("Bad Request: Usuário não existente na lista de participantes")
     }
-
-    res.send(user);
+    isUserOn.lastStatus = Date.now();
+    res.sendStatus(200);
 });
 
 // const isUserInactive = () => {
