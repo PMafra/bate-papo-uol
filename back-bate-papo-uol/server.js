@@ -96,7 +96,6 @@ app.post('/status', (req, res) => {
 //         }
 //     }
 // }
-
 // setInterval(isUserInactive, 15000);
 
 app.listen(4000);
