@@ -1,0 +1,27 @@
+{
+  "name": "bate-papo-uol",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PMafra/pratica_12_bate-papo-uol.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PMafra/pratica_12_bate-papo-uol/issues"
+  },
+  "homepage": "https://github.com/PMafra/pratica_12_bate-papo-uol#readme",
+  "dependencies": {
+    "axios": "^0.22.0",
+    "cors": "^2.8.5",
+    "dayjs": "^1.10.7",
+    "express": "^4.17.1"
+  }
+}
